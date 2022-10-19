@@ -1,3 +1,4 @@
+
 function App() {
     const { Container, Row, Col } = ReactBootstrap;
     return (
@@ -46,14 +47,13 @@ function TodoListCard() {
         },
         [items],
     );
-
     if (items === null) return 'Loading...';
 
     return (
         <React.Fragment>
-            <AddItemForm onNewItem={onNewItem} />
+            <AddItem onNewItem={onNewItem} />
             {items.length === 0 && (
-                <p className="text-center">No items yet! Add one above!</p>
+                <p className="text-center">You have no todo items yet! Add one above!</p> 
             )}
             {items.map(item => (
                 <ItemDisplay
@@ -67,8 +67,8 @@ function TodoListCard() {
     );
 }
 
-function AddItemForm({ onNewItem }) {
-    const { Form, InputGroup, Button } = ReactBootstrap;
+function AddItem({ onNewItem }) {
+    const { Form, InputGroup, Button, h1, div } = ReactBootstrap;
 
     const [newItem, setNewItem] = React.useState('');
     const [submitting, setSubmitting] = React.useState(false);
@@ -90,13 +90,15 @@ function AddItemForm({ onNewItem }) {
     };
 
     return (
+        <div>
+        <h1>Aidan's Amazing List Website</h1>
         <Form onSubmit={submitNewItem}>
             <InputGroup className="mb-3">
                 <Form.Control
                     value={newItem}
                     onChange={e => setNewItem(e.target.value)}
                     type="text"
-                    placeholder="New Item"
+                    placeholder="Add New Item"
                     aria-describedby="basic-addon1"
                 />
                 <InputGroup.Append>
@@ -106,17 +108,19 @@ function AddItemForm({ onNewItem }) {
                         disabled={!newItem.length}
                         className={submitting ? 'disabled' : ''}
                     >
-                        {submitting ? 'Adding...' : 'Add Item'}
+                        {submitting ? 'Adding...' : 'Add'}
                     </Button>
                 </InputGroup.Append>
             </InputGroup>
         </Form>
+        </div>
     );
 }
 
-function ItemDisplay({ item, onItemUpdate, onItemRemoval }) {
-    const { Container, Row, Col, Button } = ReactBootstrap;
-
+function ItemDisplay({ item, onItemUpdate, onItemRemoval, onItemEdit }) {
+    const { Container, Row, Col, Button, Form, InputGroup } = ReactBootstrap;
+    const [editing, setEditing] = React.useState(false);
+    const [name, setName] = React.useState("");
     const toggleCompletion = () => {
         fetch(`/items/${item.id}`, {
             method: 'PUT',
@@ -129,13 +133,25 @@ function ItemDisplay({ item, onItemUpdate, onItemRemoval }) {
             .then(r => r.json())
             .then(onItemUpdate);
     };
-
+    const editItem = (event) => {
+        item.name = name; 
+        setEditing(!editing);
+        fetch(`/items/${item.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                name: item.name,
+                completed: item.completed,
+            }),
+            headers: { 'Content-Type': 'application/json' },
+        })
+            .then(r => r.json())
+            .then(onItemEdit);
+    }
     const removeItem = () => {
         fetch(`/items/${item.id}`, { method: 'DELETE' }).then(() =>
             onItemRemoval(item),
         );
     };
-
     return (
         <Container fluid className={`item ${item.completed && 'completed'}`}>
             <Row>
@@ -158,10 +174,41 @@ function ItemDisplay({ item, onItemUpdate, onItemRemoval }) {
                         />
                     </Button>
                 </Col>
-                <Col xs={10} className="name">
+                {!editing && 
+                <Col xs={10} className="name" id={"name_obj"+item.id}>
                     {item.name}
                 </Col>
+                }
+                {editing &&
+
+                <InputGroup className="mb-3" id={"edit_obj"+item.id} >
+                    <Form.Control
+                        placeholder={item.name}
+                        aria-label="Edit text"
+                        aria-describedby="basic-addon2"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        
+                    />
+                    <Button 
+                        variant="outline-secondary"
+                        id="button-addon2"
+                        type="submit"
+                        onClick={editItem}
+                        >
+                        Submit Edit
+                    </Button>
+                </InputGroup>}
                 <Col xs={1} className="text-center remove">
+                    <Button
+                        size="sm"
+                        variant="link"
+                        onClick={() => setEditing(!editing)}
+                        aria-label="Edit Item"
+                    >
+                        <i className="fa fa-pen" />
+                    </Button>
                     <Button
                         size="sm"
                         variant="link"
@@ -171,6 +218,7 @@ function ItemDisplay({ item, onItemUpdate, onItemRemoval }) {
                         <i className="fa fa-trash text-danger" />
                     </Button>
                 </Col>
+                
             </Row>
         </Container>
     );
