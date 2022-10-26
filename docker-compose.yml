@@ -28,7 +28,7 @@ services:
       MYSQL_PASSWORD: secret
       MYSQL_DB: todos 
   mysql:
-    image: aidan959/mysql:5.7
+    image: mysql:5.7
     volumes:
       - todo-mysql-data:/var/lib/mysql
     environment:
